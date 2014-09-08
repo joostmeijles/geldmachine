@@ -10,4 +10,5 @@ A machine that consistenly out performs the market, ie. the S&P 500 index (^GSPC
  - Trend
  - Price zone, support and resistance
 4. Calculate risk-reward ratio
-5. Perform backtest
+5. Analyze different time frames: short, intermediate, long
+6. Perform backtest
