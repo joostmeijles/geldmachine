@@ -1,4 +1,7 @@
 ﻿open System
+open FSharp.Data
+
+type StockData = CsvProvider<"http://ichart.finance.yahoo.com/table.csv?s=SPX">
 
 [<EntryPoint;STAThread>]
 let main argv = 
