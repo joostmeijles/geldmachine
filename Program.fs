@@ -1,9 +1,11 @@
 ﻿open System
-open FSharp.Data
+open Load
 
-type StockData = CsvProvider<"http://ichart.finance.yahoo.com/table.csv?s=SPX">
+let msft = Load.stockData "MSFT"
 
 [<EntryPoint;STAThread>]
 let main argv = 
-    printfn "%A" argv
+    printfn "%A" msft.Headers
+    Seq.take 10 (msft.Rows) |> Seq.iter (fun d -> printfn "%A " d)
+    Console.ReadLine() |> ignore
     0 //exit code
