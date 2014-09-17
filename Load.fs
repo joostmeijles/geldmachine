@@ -35,10 +35,23 @@ let loadFromFile symbol =
              Some(data)
         else None
 
+let loadFromUrl url =
+    try
+        let test = createRequest Get url |> getResponse //FSharp.Data doesn't handle exceptions well?!
+        if test.StatusCode = 200 then
+            let data = StockData.Load(url)
+            Some(data)
+        else
+            None
+    with
+        err -> None
+
+let stockRowToString (d,o,h,l,c,v,a) = sprintf "%A,%M,%M,%M,%M,%d,%M" d o h l c v a
+
 let saveToFile symbol (headers:string [] option) (data:StockRows) =
     let headers'  = if headers.IsSome then headers.Value else [|""|]
     let headers'' = String.concat "," headers' 
-    let data'     = Seq.map (fun (d,o,h,l,c,v,a) -> sprintf "%A,%M,%M,%M,%M,%d,%M" d o h l c v a) data
+    let data'     = Seq.map stockRowToString data
     let data''    = String.concat "\r\n" data'
     let filename  = (filenameFor symbol)
     try
@@ -50,29 +63,28 @@ let saveToFile symbol (headers:string [] option) (data:StockRows) =
     with
         err -> printfn "Failed save file %s: %A" filename err 
 
+let latestDate rows = 
+    let (latest,_,_,_,_,_,_) = Seq.head rows
+    latest
+
 let stockData symbol = 
     let data = loadFromFile symbol
     match data with
     | Some(data) ->
-        let rows = toStockRows data 
-        let (latest_date,_,_,_,_,_,_) = Seq.head rows
-        let url = urlForRange symbol latest_date DateTime.Now
-        try
-            let test = createRequest Get url |> getResponse //FSharp.Data doesn't handle exceptions well?!
-            printfn "test = %A" test.StatusCode
-            if test.StatusCode = 200 then
-                let missing_data = StockData.Load(url)
-                let all = Seq.append missing_data.Rows data.Rows
-                printfn "latest_date = %A, url = %A, missing = %A, all = %A" latest_date url missing_data.Rows (Seq.take 10 all)
-        with
-            _ -> printfn "Failed to download data" 
-        data
-    | None       -> 
+        let rows = toStockRows data
+        let url = urlForRange symbol (latestDate rows) DateTime.Now
+        let data' = loadFromUrl url
+        match data' with
+        | Some(data') -> 
+            let rows' = Seq.append (toStockRows data') rows
+            saveToFile symbol data.Headers rows'
+            let data'' = loadFromFile symbol
+            match data'' with
+            | Some(data'') -> data''
+            | None         -> data
+        | None -> data
+    | None -> 
         let data = StockData.Load(urlForAll symbol)
         let rows = toStockRows data
-        let (latest_date,_,_,_,_,_,_) = Seq.head rows
-        printfn "latest_date = %A" latest_date
         saveToFile symbol data.Headers rows
-        //data.Save(filenameFor symbol)
-        printfn "%A" data.Headers
         data
