@@ -8,7 +8,7 @@ open System.IO
 let STOCK_DATA_PATH = "data/"
 let YAHOO_URL       = "http://ichart.finance.yahoo.com/table.csv"
 
-type StockData = CsvProvider<"http://ichart.finance.yahoo.com/table.csv?s=SPX">
+type StockData = CsvProvider<"http://ichart.finance.yahoo.com/table.csv?s=^GSPC">
 
 type StockRow  = (DateTime * decimal * decimal * decimal * decimal * int64 * decimal)
 type StockRows = StockRow seq
@@ -67,22 +67,26 @@ let latestDate rows =
     let (latest,_,_,_,_,_,_) = Seq.head rows
     latest
 
-let stockData symbol = 
-    let data = loadFromFile symbol
-    match data with
-    | Some(data) ->
-        let rows = toStockRows data
-        let url = urlForRange symbol (latestDate rows) DateTime.Now
-        let data' = loadFromUrl url
+let updateStockData symbol data =
+    let rows   = toStockRows data
+    let latest = latestDate rows
+    let now    = DateTime.Now
+    if latest.Date < now then
+        let url    = urlForRange symbol latest now
+        let data'  = loadFromUrl url
         match data' with
         | Some(data') -> 
             let rows' = Seq.append (toStockRows data') rows
             saveToFile symbol data.Headers rows'
-            let data'' = loadFromFile symbol
-            match data'' with
-            | Some(data'') -> data''
-            | None         -> data
+            StockData.Load(filenameFor symbol)
         | None -> data
+    else 
+        data
+
+let stockData symbol = 
+    let data = loadFromFile symbol
+    match data with
+    | Some(data) -> updateStockData symbol data
     | None -> 
         let data = StockData.Load(urlForAll symbol)
         let rows = toStockRows data
