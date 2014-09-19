@@ -1,10 +1,10 @@
 ﻿open System
-open Load
+open GeldMachine.Data
 
-let gspc = Load.stockData "^GSPC"
-let msft = Load.stockData "MSFT"
+let gspc = stockData "^GSPC"
+let msft = stockData "MSFT"
 
-let printStockData (data:Load.StockData) =
+let printStockData (data:StockData) =
     printfn "%A" data.Headers
     Seq.take 10 data.Rows |> Seq.iter (fun d -> printfn "%A " d)
 

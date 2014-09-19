@@ -1,4 +1,4 @@
-﻿module Load
+﻿module GeldMachine.Data
 
 open HttpClient
 open FSharp.Data
