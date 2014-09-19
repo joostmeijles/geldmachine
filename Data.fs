@@ -83,7 +83,7 @@ let updateStockData symbol data =
     else 
         data
 
-let stockData symbol = 
+let getStockData symbol = 
     let data = loadFromFile symbol
     match data with
     | Some(data) -> updateStockData symbol data

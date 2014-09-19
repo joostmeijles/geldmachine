@@ -1,8 +1,8 @@
 ﻿open System
 open GeldMachine.Data
 
-let gspc = stockData "^GSPC"
-let msft = stockData "MSFT"
+let gspc = getStockData "^GSPC"
+let msft = getStockData "MSFT"
 
 let printStockData (data:StockData) =
     printfn "%A" data.Headers
