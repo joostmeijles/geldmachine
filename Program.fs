@@ -16,10 +16,12 @@ let gspc = getStockData "^GSPC"
 let msft = 
     let data = getStockData "MSFT"
     Seq.take 60 data.Rows
+let msftSPHs = getSPHs msft
+let msftSPLs = getSPLs msft
 
 [<EntryPoint>]
 let main argv = 
     let form = new Form(Visible = true, Width = 700, Height = 500)
-    form.Controls.Add(new ChartControl(msft, Dock = DockStyle.Fill))
+    form.Controls.Add(new ChartControl(msft, msftSPHs, msftSPLs, Dock = DockStyle.Fill))
     Application.Run(form);
     0 //exit code

@@ -7,19 +7,19 @@ type Swingpoint =
     | SPL
 
 let private getSPs (data:StockData.Row seq) (property:StockData.Row->decimal) (compare:decimal->decimal->bool) = 
-    let mutable potentialSwingPoint = decimal 0
+    let mutable potentialSwingPoint = Seq.head data
     let mutable successive = 0
     let mutable sps = []
 
     for row in data do
-        if(compare (property row) potentialSwingPoint) then
+        if(compare (property row) (property potentialSwingPoint)) then
             successive <- successive + 1
             if(successive >= 6) then
                 sps <- List.append [potentialSwingPoint] sps
-                potentialSwingPoint <- property row
+                potentialSwingPoint <- row
                 successive <- 0
         else
-            potentialSwingPoint <- property row
+            potentialSwingPoint <- row
             successive <- 0 
 
     sps

@@ -7,12 +7,15 @@ open System.Windows.Forms
 open System.Drawing
 open System.Windows.Forms.DataVisualization.Charting
 
-type ChartControl (rows:StockData.Row seq) as self = 
+type ChartControl (rows:StockData.Row seq, sphs:StockData.Row seq, spls:StockData.Row seq) as self = 
     inherit UserControl()
     
     let toHLOC (data:StockData.Row) = data.Date, data.High, data.Low, data.Open, data.Close
     let minRows rows = Seq.min (Seq.map (fun (r:StockData.Row) -> r.Low) rows)
     let maxRows rows = Seq.max (Seq.map (fun (r:StockData.Row) -> r.High) rows)
+    let revRows = List.rev (Seq.toList rows)
+    let sphIndices = Seq.map (fun (r:StockData.Row) -> Seq.findIndex (fun (a:StockData.Row) -> r.Date = a.Date) revRows) sphs
+    let splIndices = Seq.map (fun (r:StockData.Row) -> Seq.findIndex (fun (a:StockData.Row) -> r.Date = a.Date) revRows) spls
 
     let priceChart =
         let min = float (minRows rows)
@@ -40,16 +43,19 @@ type ChartControl (rows:StockData.Row seq) as self =
         let c = findControl combineChart.Controls
         match c with
         | Some(c) ->
-            let a = new LineAnnotation()
-            a.X <- float 100
-            a.Y <- float 100
-            a.Width <- float 100
-            a.Height <- float 100
-            a.LineColor <- Color.Black
-            a.AnchorX <- float 100
-            a.AnchorY <- float 100
-            c.Annotations.Add(a)
+            for sphi in sphIndices do 
+                let dp = c.Series.[0].Points.[sphi]
+                let ta = new TextAnnotation()
+                ta.Text <- "SPH"
+                ta.AnchorDataPoint <- dp
+                c.Annotations.Add(ta)
 
+            for spli in splIndices do 
+                let dp = c.Series.[0].Points.[spli]
+                let ta = new TextAnnotation()
+                ta.Text <- "SPL"
+                ta.AnchorDataPoint <- dp
+                c.Annotations.Add(ta)
         | None -> ignore()
 
         self.Controls.Add(combineChart)     
