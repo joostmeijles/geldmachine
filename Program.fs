@@ -1,5 +1,6 @@
 ﻿open System
 open System.Windows.Forms
+open System.Windows.Forms.DataVisualization.Charting
 open System.Drawing
 
 open GeldMachine.Charting
@@ -17,8 +18,9 @@ let msft =
 
 [<EntryPoint>]
 let main argv = 
-    let form = new Form(Visible = true, TopMost = true, Width = 700, Height = 500)
+    let form = new Form(Visible = true, Width = 700, Height = 500)
     form.Controls.Add(new ChartControl(msft, Dock = DockStyle.Fill))
+
     Application.Run(form);
 
     0 //exit code
