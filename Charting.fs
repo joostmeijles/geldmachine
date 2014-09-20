@@ -2,6 +2,7 @@
 
 open FSharp.Charting
 open GeldMachine.Data
+open GeldMachine.Indicator.Swingpoint
 open System.Windows.Forms
 open System.Drawing
 open System.Windows.Forms.DataVisualization.Charting
@@ -16,8 +17,9 @@ type ChartControl (rows:StockData.Row seq) as self =
     let priceChart =
         let min = float (minRows rows)
         let max = float (maxRows rows)
-        let HLOC = Seq.map toHLOC rows  
-        Chart.Candlestick(HLOC).WithYAxis(Min = min, Max = max)
+        let HLOC = Seq.map toHLOC rows
+        let HLOC' = List.rev (Seq.toList HLOC)  
+        Chart.Candlestick(HLOC').WithYAxis(Min = min, Max = max)
 
     let volumeChart =
         let V = Seq.map (fun (r:StockData.Row) -> r.Date, r.Volume) rows

@@ -5,6 +5,7 @@ open System.Drawing
 
 open GeldMachine.Charting
 open GeldMachine.Data
+open GeldMachine.Indicator.Swingpoint
 
 let printStockData (data:StockData) =
     printfn "%A" data.Headers
@@ -16,11 +17,15 @@ let msft =
     let data = getStockData "MSFT"
     Seq.take 60 data.Rows
 
+let sphs = 
+    let s = getSwingpoints msft
+    printfn "%A" s
+
 [<EntryPoint>]
 let main argv = 
     let form = new Form(Visible = true, Width = 700, Height = 500)
     form.Controls.Add(new ChartControl(msft, Dock = DockStyle.Fill))
-
+    sphs
     Application.Run(form);
 
     0 //exit code
