@@ -5,6 +5,16 @@ open FSharp.Data
 open System
 open System.IO
 
+[<StructuredFormatDisplay("{High}")>]
+type OHLC = {
+    Date     : DateTime;
+    Open     : decimal;
+    High     : decimal;
+    Low      : decimal;
+    Close    : decimal;
+    Volume   : int64;
+    Adjusted : decimal }
+
 let private STOCK_DATA_PATH = "data/"
 let private YAHOO_URL       = "http://ichart.finance.yahoo.com/table.csv"
 

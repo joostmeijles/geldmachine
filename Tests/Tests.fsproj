@@ -58,6 +58,13 @@
     <None Include="Script.fsx" />
     <None Include="packages.config" />
   </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\GeldMachine.fsproj">
+      <Name>GeldMachine</Name>
+      <Project>{34e5e0e1-4a77-479c-8d8f-7e29f01026a2}</Project>
+      <Private>True</Private>
+    </ProjectReference>
+  </ItemGroup>
   <PropertyGroup>
     <MinimumVisualStudioVersion Condition="'$(MinimumVisualStudioVersion)' == ''">11</MinimumVisualStudioVersion>
   </PropertyGroup>

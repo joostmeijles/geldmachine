@@ -5,7 +5,7 @@ VisualStudioVersion = 12.0.30723.0
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "GeldMachine", "GeldMachine.fsproj", "{34E5E0E1-4A77-479C-8D8F-7E29F01026A2}"
 EndProject
-Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "Tests", "..\Tests\Tests.fsproj", "{98691929-9288-4237-BEEF-E4FC7547EEF8}"
+Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "Tests", "Tests\Tests.fsproj", "{98691929-9288-4237-BEEF-E4FC7547EEF8}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
