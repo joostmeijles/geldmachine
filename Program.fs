@@ -7,7 +7,7 @@ let msft = getStockData "MSFT"
 let printStockData (data:StockData) =
     printfn "%A" data.Headers
     Seq.take 10 data.Rows |> Seq.iter (fun d -> printfn "%A " d)
-
+    
 [<EntryPoint;STAThread>]
 let main argv = 
     printStockData msft
