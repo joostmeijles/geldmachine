@@ -6,6 +6,7 @@ open System.Drawing
 open GeldMachine.Charting
 open GeldMachine.Data
 open GeldMachine.Indicator.Swingpoint
+open GeldMachine.Indicator.Trend
 
 let printStockData (data:StockData) =
     printfn "%A" data.Headers
@@ -20,11 +21,7 @@ let msftSPLs = getSPLs msft
 
 [<EntryPoint>]
 let main argv = 
-    printfn "%A" msft
-    printfn "--------------------------------------------------------"
-    printfn "SPHs: %A" msftSPHs
-    printfn "--------------------------------------------------------"
-    printfn "SPLs: %A" msftSPLs
+    let t = getTrends msft msftSPHs msftSPLs
 
     let form = new Form(Visible = true, Width = 700, Height = 500)
     form.Controls.Add(new ChartControl(msft, msftSPHs, msftSPLs, Dock = DockStyle.Fill))

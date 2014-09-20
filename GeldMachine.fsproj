@@ -69,6 +69,7 @@
   <ItemGroup>
     <Compile Include="Data.fs" />
     <Compile Include="Swingpoint.fs" />
+    <Compile Include="Trend.fs" />
     <Compile Include="Charting.fs" />
     <Compile Include="Program.fs" />
     <None Include="App.config" />
