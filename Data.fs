@@ -7,12 +7,12 @@ open System.IO
 
 [<StructuredFormatDisplay("{High}")>]
 type OHLC = {
-    Date     : DateTime;
-    Open     : decimal;
-    High     : decimal;
-    Low      : decimal;
-    Close    : decimal;
-    Volume   : int64;
+    Date     : DateTime
+    Open     : decimal
+    High     : decimal
+    Low      : decimal
+    Close    : decimal
+    Volume   : int64
     Adjusted : decimal }
 
 let private STOCK_DATA_PATH = "data/"
@@ -25,6 +25,11 @@ type private StockRows = StockRow seq
 
 let private toStockRows (data : StockData) = 
     Seq.map (fun (r : StockData.Row) -> r.Date, r.Open, r.High, r.Low, r.Close, r.Volume, r.``Adj Close``) data.Rows
+
+let private translateRow (row:StockData.Row) = {Date = row.Date; Open = row.Open; High = row.High; Low = row.Low; Close = row.Close; Volume = row.Volume; Adjusted = row.``Adj Close``}
+let private translate n (rows:StockData.Row seq) = 
+    let ohlc = Seq.map translateRow rows
+    List.rev (Seq.toList (Seq.take n ohlc))
 
 let private urlForAll symbol = YAHOO_URL + "?s=" + symbol
 
@@ -93,12 +98,14 @@ let private updateStockData symbol data =
     else 
         data
 
-let getStockData symbol = 
+let getStockData n symbol = 
     let data = loadFromFile symbol
     match data with
-    | Some(data) -> updateStockData symbol data
+    | Some(data) -> 
+        let data' = updateStockData symbol data
+        translate n data'.Rows
     | None -> 
         let data = StockData.Load(urlForAll symbol)
         let rows = toStockRows data
         saveToFile symbol data.Headers rows
-        data
+        translate n data.Rows

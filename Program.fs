@@ -11,13 +11,9 @@ let printStockData (data:StockData) =
     printfn "%A" data.Headers
     Seq.take 10 data.Rows |> Seq.iter (fun d -> printfn "%A " d)
 
-let translate (row:StockData.Row) = {Date = row.Date; Open = row.Open; High = row.High; Low = row.Low; Close = row.Close; Volume = row.Volume; Adjusted = row.``Adj Close``}
 
-let gspc = getStockData "^GSPC"
-let msft = 
-    let data = getStockData "MSFT"
-    let ohlc = Seq.map translate (Seq.take 60 data.Rows)
-    List.rev (Seq.toList ohlc)
+let gspc = getStockData 60 "^GSPC"
+let msft = getStockData 60 "MSFT"
 
 let msftSPHs = getSPHs msft
 let msftSPLs = getSPLs msft
