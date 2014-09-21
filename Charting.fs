@@ -3,6 +3,8 @@
 open FSharp.Charting
 open GeldMachine.Data
 open GeldMachine.Indicator.Swingpoint
+
+open System
 open System.Windows.Forms
 open System.Drawing
 open System.Windows.Forms.DataVisualization.Charting
@@ -23,7 +25,7 @@ type ChartControl (rows:OHLC seq, sphs:list<OHLC>, spls:list<OHLC>) as self =
         Chart.Candlestick(HLOC).WithYAxis(Min = min, Max = max)
 
     let volumeChart =
-        let V = Seq.map (fun r -> r.Date, r.Volume) rows
+        let V = Seq.map (fun r -> (*r.Date,*) r.Volume) rows
         Chart.Column(V)
 
     let findControl (controls:Control.ControlCollection) =
@@ -49,6 +51,9 @@ type ChartControl (rows:OHLC seq, sphs:list<OHLC>, spls:list<OHLC>) as self =
         let c = findControl combineChart.Controls
         match c with
         | Some(c) ->
+            c.ChartAreas.[1].AxisX.LabelStyle.Enabled <- false
+            c.ChartAreas.[0].AlignWithChartArea <- "Area_2"
+            c.ChartAreas.[0].AxisX.LabelStyle.Format <- "dd/MM/yy"
             addSwingpointAnnotation c sphIndices "SPH"
             addSwingpointAnnotation c splIndices "SPL"
         | None -> ignore()
