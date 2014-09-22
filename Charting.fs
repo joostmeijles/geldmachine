@@ -45,7 +45,13 @@ type ChartControl (rows:OHLC seq, sphs:list<OHLC>, spls:list<OHLC>) as self =
             ta.AnchorDataPoint <- dp
             chart.Annotations.Add(ta) 
 
+    let alignCharts (chart:Chart) = 
+        chart.ChartAreas.[0].AlignWithChartArea <- "Area_2"
+        chart.ChartAreas.[1].Position.Height    <- chart.ChartAreas.[1].Position.Height / (float32 2) 
+        chart.ChartAreas.[1].Position.Y         <- chart.ChartAreas.[1].Position.Y - (float32 5)
+
     let formatDates (chart:Chart) =
+        chart.ChartAreas.[1].AxisX.LabelStyle.Enabled <- false
         let mutable i = 0
         for d in dates do
             chart.Series.[0].Points.[i].AxisLabel <- d
@@ -60,9 +66,7 @@ type ChartControl (rows:OHLC seq, sphs:list<OHLC>, spls:list<OHLC>) as self =
         let c = findControl combineChart.Controls
         match c with
         | Some(c) ->
-            c.ChartAreas.[1].AxisX.LabelStyle.Enabled <- false
-            c.ChartAreas.[0].AlignWithChartArea <- "Area_2"
-            c.ChartAreas.[1].Position.Height <- c.ChartAreas.[1].Position.Height / (float32 2) 
+            alignCharts c    
             formatDates c
             addSwingpointAnnotation c sphIndices "SPH"
             addSwingpointAnnotation c splIndices "SPL"
