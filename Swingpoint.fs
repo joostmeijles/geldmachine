@@ -7,10 +7,10 @@ type Swingpoint =
     | SPH
     | SPL
 
-let private getSPs (data:OHLC list) (property:OHLC->decimal) (compare:decimal->decimal->bool) = 
+let private getSPs (data:OHLC list) (property:OHLC -> decimal) (compare:decimal -> decimal -> bool) = 
     match data with
     | h :: t ->
-        let mutable potentialSwingPoint = Seq.head data
+        let mutable potentialSwingPoint = h
         let mutable successive = 0
         let mutable sps = []
 
@@ -27,5 +27,5 @@ let private getSPs (data:OHLC list) (property:OHLC->decimal) (compare:decimal->d
         sps
     | _ -> []
 
-let getSPLs (data:OHLC list) = getSPs data (fun row -> row.Low) (fun current best -> current > best)
+let getSPLs (data:OHLC list) = getSPs data (fun row -> row.Low)  (fun current best -> current > best)
 let getSPHs (data:OHLC list) = getSPs data (fun row -> row.High) (fun current best -> current < best)
