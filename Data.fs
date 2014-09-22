@@ -109,3 +109,10 @@ let getStockData n symbol =
         let rows = toStockRows data
         saveToFile symbol data.Headers rows
         translate n data.Rows
+
+let getStockDataOffline n symbol =
+    let data = loadFromFile symbol
+    match data with
+    | Some(data) -> translate n data.Rows
+    | None       -> printfn "Unable to get offline data from disk (%A): try the online version..." (filenameFor symbol)
+                    []

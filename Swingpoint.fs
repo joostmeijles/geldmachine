@@ -7,7 +7,7 @@ type Swingpoint =
     | SPH
     | SPL
 
-let private getSPs (data:OHLC list) (property:OHLC -> decimal) (compare:decimal -> decimal -> bool) = 
+let private getSPs (data:OHLC list) (property:OHLC -> decimal) (compare:decimal -> decimal ->bool) = 
     match data with
     | h :: t ->
         let mutable potentialSwingPoint = h

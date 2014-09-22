@@ -13,8 +13,8 @@ let printStockData (data:StockData) =
     Seq.take 10 data.Rows |> Seq.iter (fun d -> printfn "%A " d)
 
 
-let gspc = getStockData 60 "^GSPC"
-let msft = getStockData 60 "MSFT"
+let gspc = getStockDataOffline 60 "^GSPC"
+let msft = getStockDataOffline 60 "MSFT"
 
 let msftSPHs = getSPHs msft
 let msftSPLs = getSPLs msft
