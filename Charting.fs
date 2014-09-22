@@ -13,6 +13,8 @@ type ChartControl (rows:OHLC seq, sphs:list<OHLC>, spls:list<OHLC>) as self =
     inherit UserControl()
     
     let toHLOC (data:OHLC) = data.Date, data.High, data.Low, data.Open, data.Close
+    let HLOC  = Seq.map toHLOC rows
+    let dates = Seq.map (fun r -> r.Date.ToString("dd/MM/yy")) rows
     let minRows rows = Seq.min (Seq.map (fun r -> r.Low)  rows)
     let maxRows rows = Seq.max (Seq.map (fun r -> r.High) rows)
     let sphIndices = Seq.map (fun r -> Seq.findIndex (fun a -> r.Date = a.Date) rows) sphs
@@ -21,7 +23,6 @@ type ChartControl (rows:OHLC seq, sphs:list<OHLC>, spls:list<OHLC>) as self =
     let priceChart =
         let min = float (minRows rows)
         let max = float (maxRows rows)
-        let HLOC = Seq.map toHLOC rows
         Chart.Candlestick(HLOC).WithYAxis(Min = min, Max = max)
 
     let volumeChart =
@@ -44,6 +45,14 @@ type ChartControl (rows:OHLC seq, sphs:list<OHLC>, spls:list<OHLC>) as self =
             ta.AnchorDataPoint <- dp
             chart.Annotations.Add(ta) 
 
+    let formatDates (chart:Chart) =
+        let mutable i = 0
+        for d in dates do
+            chart.Series.[0].Points.[i].AxisLabel <- d
+            chart.Series.[0].Points.[i].ToolTip   <- d + " High=#VALY1, Low=#VALY2, Open=#VALY3, Close=#VALY4"
+            chart.Series.[1].Points.[i].ToolTip   <- d + " Volume=#VALY1"
+            i <- i + 1
+
     do
         let combine = Chart.Rows [priceChart; volumeChart]
         let combineChart = new ChartTypes.ChartControl(combine, Dock = DockStyle.Fill)
@@ -53,7 +62,8 @@ type ChartControl (rows:OHLC seq, sphs:list<OHLC>, spls:list<OHLC>) as self =
         | Some(c) ->
             c.ChartAreas.[1].AxisX.LabelStyle.Enabled <- false
             c.ChartAreas.[0].AlignWithChartArea <- "Area_2"
-            c.ChartAreas.[0].AxisX.LabelStyle.Format <- "dd/MM/yy"
+            c.ChartAreas.[1].Position.Height <- c.ChartAreas.[1].Position.Height / (float32 2) 
+            formatDates c
             addSwingpointAnnotation c sphIndices "SPH"
             addSwingpointAnnotation c splIndices "SPL"
         | None -> ignore()
