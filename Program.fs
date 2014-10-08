@@ -13,16 +13,16 @@ let printStockData (data:StockData) =
     Seq.take 10 data.Rows |> Seq.iter (fun d -> printfn "%A " d)
 
 
-let gspc = getStockDataOffline 60 "^GSPC"
-let msft = getStockDataOffline 60 "MSFT"
+let gspc = getStockData 60 "^GSPC"
+let msft = getStockData 60 "MSFT"
 
 let msftSPHs = getSPHs msft
 let msftSPLs = getSPLs msft
 
 [<EntryPoint>]
 let main argv = 
-    let t = getTrends msft msftSPHs msftSPLs
-
+    let t = getTrends msft msftSPLs msftSPHs
+    printfn "%A" t
     let form = new Form(Visible = true, Width = 700, Height = 500)
     form.Controls.Add(new ChartControl(msft, msftSPHs, msftSPLs, Dock = DockStyle.Fill))
     Application.Run(form);

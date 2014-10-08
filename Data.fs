@@ -5,7 +5,8 @@ open FSharp.Data
 open System
 open System.IO
 
-[<StructuredFormatDisplay("{High}")>]
+[<StructuralEquality>]
+[<StructuralComparison>]
 type OHLC = {
     Date     : DateTime
     Open     : decimal
@@ -14,6 +15,8 @@ type OHLC = {
     Close    : decimal
     Volume   : int64
     Adjusted : decimal }
+    with
+        static member (==) (a:OHLC, b:OHLC)= a.Equals b
 
 let private STOCK_DATA_PATH = "data/"
 let private YAHOO_URL       = "http://ichart.finance.yahoo.com/table.csv"

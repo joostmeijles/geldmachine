@@ -18,7 +18,7 @@ let private getSPs (data:OHLC list) (property:OHLC -> decimal) (compare:decimal 
             if(compare (property row) (property potentialSwingPoint)) then
                 successive <- successive + 1
                 if(successive >= 6) then
-                    sps <- List.append [potentialSwingPoint] sps
+                    sps <- potentialSwingPoint :: sps
                     potentialSwingPoint <- row
                     successive <- 0
             else
