@@ -61,25 +61,29 @@ let updateInUseSWPs (p:OHLC) (all:list<OHLC>) inUse =
             all, inUse
     | _ -> all, inUse
 
+
+//TODO: re-generate and re-test?
 let getTrends (data:list<OHLC>) (spls:list<OHLC>) (sphs:list<OHLC>) = 
     let mutable allSPLs = List.sortBy (fun e -> e.Date) spls
     let mutable allSPHs = List.sortBy (fun e -> e.Date) sphs
     let mutable useSPLs = []
     let mutable useSPHs = []
-    let mutable t       = []
+    let mutable trend   = Sideways, Ambivalent
+    let mutable trendChanges = [(List.head data, trend)]
     
     for p in data do
-        let t0 = if t.IsEmpty then (Sideways, Ambivalent) else Seq.last t
-        
         let allSPLs', useSPLs' = updateInUseSWPs p allSPLs useSPLs
         let allSPHs', useSPHs' = updateInUseSWPs p allSPHs useSPHs
         
-        let (t1, useSPLs'') = swingpointLowTest  p useSPLs' t0 
-        let (t2, useSPHs'') = swingpointHighTest p useSPHs' t1
+        let (trend' , useSPLs'') = swingpointLowTest  p useSPLs' trend 
+        let (trend'', useSPHs'') = swingpointHighTest p useSPHs' trend'
 
-        t <- List.append t [t2]
+        if trend <> trend'' then
+            trendChanges <- (p,trend'') :: trendChanges 
+
+        trend <- trend''
         allSPLs <- allSPLs'
         allSPHs <- allSPHs'
         useSPLs <- useSPLs''
         useSPHs <- useSPHs''
-    t
+    trendChanges

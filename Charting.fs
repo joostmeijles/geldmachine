@@ -3,13 +3,14 @@
 open FSharp.Charting
 open GeldMachine.Data
 open GeldMachine.Indicator.Swingpoint
+open GeldMachine.Indicator.Trend
 
 open System
 open System.Windows.Forms
 open System.Drawing
 open System.Windows.Forms.DataVisualization.Charting
 
-type ChartControl (rows:OHLC seq, sphs:list<OHLC>, spls:list<OHLC>) as self = 
+type ChartControl (rows:OHLC seq, sphs:list<OHLC>, spls:list<OHLC>, trends:list<OHLC * (Trend*Strength)>) as self = 
     inherit UserControl()
     
     let toHLOC (data:OHLC) = data.Date, data.High, data.Low, data.Open, data.Close
@@ -17,8 +18,9 @@ type ChartControl (rows:OHLC seq, sphs:list<OHLC>, spls:list<OHLC>) as self =
     let dates = Seq.map (fun r -> r.Date.ToString("dd/MM/yy")) rows
     let minRows rows = Seq.min (Seq.map (fun r -> r.Low)  rows)
     let maxRows rows = Seq.max (Seq.map (fun r -> r.High) rows)
-    let sphIndices = Seq.map (fun r -> Seq.findIndex (fun a -> r.Date = a.Date) rows) sphs
-    let splIndices = Seq.map (fun r -> Seq.findIndex (fun a -> r.Date = a.Date) rows) spls
+    let sphIndices = Seq.map (fun b -> Seq.findIndex (fun r -> r.Date = b.Date) rows) sphs
+    let splIndices = Seq.map (fun b -> Seq.findIndex (fun r -> r.Date = b.Date) rows) spls
+    let trendIndices = Seq.map (fun (b,s) -> s,(Seq.findIndex (fun r -> r.Date = b.Date) rows)) trends
 
     let priceChart =
         let min = float (minRows rows)
@@ -35,7 +37,7 @@ type ChartControl (rows:OHLC seq, sphs:list<OHLC>, spls:list<OHLC>) as self =
         for c in controls do
             if c.GetType() = typeof<Chart> then
                 found <- Some(c :?> Chart)
-        found   
+        found  
 
     let addSwingpointAnnotation (chart:Chart) spIndices text =
         for i in spIndices do 
@@ -44,6 +46,25 @@ type ChartControl (rows:OHLC seq, sphs:list<OHLC>, spls:list<OHLC>) as self =
             ta.Text <- text
             ta.AnchorDataPoint <- dp
             chart.Annotations.Add(ta) 
+            
+    let addTrendAnnotation (chart:Chart) trendIndices =
+        for (b,s),i in trendIndices do
+            let dp = chart.Series.[0].Points.[i]
+            let aa = new TextAnnotation() //TODO: Use ArrowAnnotation
+            //aa.ArrowStyle <- ArrowStyle.Simple
+            let color = match s with
+                        | Ambivalent -> Color.Black
+                        | Confirmed  -> Color.Green
+                        | Suspect    -> Color.Red
+            let text = match b with
+                       | Sideways -> "Side"
+                       | Bullish  -> "Bull"
+                       | Bearish  -> "Bear"
+            aa.Text <- text
+            //aa.ArrowSize <- 100
+            aa.ForeColor <- color
+            aa.AnchorDataPoint <- dp
+            chart.Annotations.Add(aa)
 
     let alignCharts (chart:Chart) = 
         chart.ChartAreas.[0].AlignWithChartArea <- "Area_2"
@@ -70,6 +91,7 @@ type ChartControl (rows:OHLC seq, sphs:list<OHLC>, spls:list<OHLC>) as self =
             formatDates c
             addSwingpointAnnotation c sphIndices "SPH"
             addSwingpointAnnotation c splIndices "SPL"
+            addTrendAnnotation c trendIndices
         | None -> ignore()
 
         self.Controls.Add(combineChart)

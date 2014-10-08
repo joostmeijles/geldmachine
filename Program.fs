@@ -12,18 +12,24 @@ let printStockData (data:StockData) =
     printfn "%A" data.Headers
     Seq.take 10 data.Rows |> Seq.iter (fun d -> printfn "%A " d)
 
+let analyzeData stock =
+    let data   = getStockData 60 "AAPL"
+    let sphs   = getSPHs data
+    let spls   = getSPLs data
+    let trends = getTrends data spls sphs
+    data, sphs, spls, trends
 
-let gspc = getStockData 60 "^GSPC"
-let msft = getStockData 60 "MSFT"
+let aapl = analyzeData "AAPL"
+let msft = analyzeData "MSFT"
+let gspc = analyzeData "^GSPC"
 
-let msftSPHs = getSPHs msft
-let msftSPLs = getSPLs msft
+let addToForm (form : Form) (data, sphs, spls, trends) =
+    printfn "%A" trends 
+    form.Controls.Add(new ChartControl(data, sphs, spls, trends, Dock = DockStyle.Fill))
 
 [<EntryPoint>]
 let main argv = 
-    let t = getTrends msft msftSPLs msftSPHs
-    printfn "%A" t
     let form = new Form(Visible = true, Width = 700, Height = 500)
-    form.Controls.Add(new ChartControl(msft, msftSPHs, msftSPLs, Dock = DockStyle.Fill))
+    addToForm form aapl
     Application.Run(form);
     0 //exit code
