@@ -13,7 +13,7 @@ let printStockData (data:StockData) =
     Seq.take 10 data.Rows |> Seq.iter (fun d -> printfn "%A " d)
 
 let analyzeData stock =
-    let data   = getStockData 60 "AAPL"
+    let data   = getStockDataOffline 60 stock
     let sphs   = getSPHs data
     let spls   = getSPLs data
     let trends = getTrends data spls sphs
@@ -30,6 +30,6 @@ let addToForm (form : Form) (data, sphs, spls, trends) =
 [<EntryPoint>]
 let main argv = 
     let form = new Form(Visible = true, Width = 700, Height = 500)
-    addToForm form aapl
+    addToForm form msft
     Application.Run(form);
     0 //exit code

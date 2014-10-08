@@ -18,6 +18,9 @@ type OHLC = {
     with
         static member (==) (a:OHLC, b:OHLC)= a.Equals b
 
+let low  (p:OHLC) = p.Low
+let high (p:OHLC) = p.High
+
 let private STOCK_DATA_PATH = "data/"
 let private YAHOO_URL       = "http://ichart.finance.yahoo.com/table.csv"
 

@@ -12,7 +12,7 @@ type Strength =
     | Suspect
     | Confirmed
 
-type private SwingpointTest =
+type SwingpointTest =
     | SWPTestLow
     | SWPTestHigh
 
@@ -22,7 +22,7 @@ let private transition = function
     | Sideways, SWPTestLow  -> Bearish
     | Sideways, SWPTestHigh -> Bullish
     | Bullish,  SWPTestLow  -> Sideways
-    | Bullish,  SWPTestHigh -> Bullish
+    | Bullish,  SWPTestHigh -> Bullish 
 
 let strengthTest (p:OHLC) (swp:OHLC) = 
     if p.Volume > swp.Volume then
@@ -30,27 +30,22 @@ let strengthTest (p:OHLC) (swp:OHLC) =
     else
         Suspect
 
-let rec swingpointLowTest p (spls:list<OHLC>) (trend,strength) =
-    match spls with
-    | h :: t ->
-        if (p.Close < h.Low) then
-            let newTrend    = transition (trend, SWPTestLow)
-            let newStrength = strengthTest p h
-            swingpointLowTest p t (newTrend,newStrength)
-        else
-            (trend,strength), spls
-    | _ -> (trend,strength), spls
+let smallerThan a b = a < b
+let greaterThan a b = a > b
 
-let rec swingpointHighTest p (sphs:list<OHLC>) (trend,strength) =
-    match sphs with
+let rec swingpointTest cmp spOp test p (sps:list<OHLC>) (trend,strength) =
+    match sps with
     | h :: t ->
-        if (p.Close > h.High) then
-            let newTrend    = transition (trend, SWPTestHigh)
-            let newStrength = strengthTest p h
-            swingpointHighTest p t (newTrend,newStrength)
+        if cmp p.Close (spOp h) then
+            let newTrend    = transition (trend, test)
+            let newStrength = strengthTest p h 
+            swingpointTest cmp spOp test p t (newTrend,newStrength)
         else
-            (trend,strength), sphs
-    | _ -> (trend,strength), sphs
+            (trend,strength), sps
+    | _ -> (trend,strength), sps
+
+let swingpointLowTest  = swingpointTest smallerThan low  SWPTestLow   
+let swingpointHighTest = swingpointTest greaterThan high SWPTestHigh 
 
 let updateInUseSWPs (p:OHLC) (all:list<OHLC>) inUse = 
     match all with
@@ -61,8 +56,7 @@ let updateInUseSWPs (p:OHLC) (all:list<OHLC>) inUse =
             all, inUse
     | _ -> all, inUse
 
-
-//TODO: re-generate and re-test?
+//TODO: Add ambivalent sideways transition: no swingpoint tests resulting in (2 lower SPH & higher SPL) or (2 higher SPH & lower SPL) -> See aapl chart
 let getTrends (data:list<OHLC>) (spls:list<OHLC>) (sphs:list<OHLC>) = 
     let mutable allSPLs = List.sortBy (fun e -> e.Date) spls
     let mutable allSPHs = List.sortBy (fun e -> e.Date) sphs
@@ -72,14 +66,14 @@ let getTrends (data:list<OHLC>) (spls:list<OHLC>) (sphs:list<OHLC>) =
     let mutable trendChanges = [(List.head data, trend)]
     
     for p in data do
-        let allSPLs', useSPLs' = updateInUseSWPs p allSPLs useSPLs
-        let allSPHs', useSPHs' = updateInUseSWPs p allSPHs useSPHs
-        
-        let (trend' , useSPLs'') = swingpointLowTest  p useSPLs' trend 
-        let (trend'', useSPHs'') = swingpointHighTest p useSPHs' trend'
+        let (trend' , useSPLs') = swingpointLowTest  p useSPLs trend 
+        let (trend'', useSPHs') = swingpointHighTest p useSPHs trend'
 
         if trend <> trend'' then
             trendChanges <- (p,trend'') :: trendChanges 
+
+        let allSPLs', useSPLs'' = updateInUseSWPs p allSPLs useSPLs'
+        let allSPHs', useSPHs'' = updateInUseSWPs p allSPHs useSPHs'
 
         trend <- trend''
         allSPLs <- allSPLs'
