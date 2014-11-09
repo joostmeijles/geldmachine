@@ -24,7 +24,7 @@ let tryFind' f (lst:list<'a*'b>) =
     | None   -> None
 
 let analyzeData stock =
-    let data   = getAllStockDataOffline stock
+    let data   = getAllStockData stock
     let frame  = toFrame data
     
     let sphs  = getSPHs data

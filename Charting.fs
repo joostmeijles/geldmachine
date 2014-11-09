@@ -17,11 +17,11 @@ let rec private DHLOC' accum (d:list<DateTime>) (h:list<float>) (l:list<float>) 
     | _      -> accum
     
 let private DHLOC (data:Frame<DateTime,string>) = 
-    let d = data.RowKeys |> Seq.toList
-    let o = Series.values data?Open  |> Seq.toList
-    let h = Series.values data?High  |> Seq.toList
-    let l = Series.values data?Low   |> Seq.toList
-    let c = Series.values data?Close |> Seq.toList
+    let d = data.RowKeys |> Seq.toList |> List.rev
+    let o = Series.values data?Open  |> Seq.toList |> List.rev
+    let h = Series.values data?High  |> Seq.toList |> List.rev
+    let l = Series.values data?Low   |> Seq.toList |> List.rev
+    let c = Series.values data?Close |> Seq.toList |> List.rev
     DHLOC' [] d h l o c
 
 let private presentIndices (data:Frame<DateTime,string>) columnName = 
