@@ -36,9 +36,10 @@ let private toStockRows (data : StockData) =
     Seq.map (fun (r : StockData.Row) -> r.Date, r.Open, r.High, r.Low, r.Close, r.Volume, r.``Adj Close``) data.Rows
 
 let private translateRow (row:StockData.Row) = {Date = row.Date; Open = row.Open; High = row.High; Low = row.Low; Close = row.Close; Volume = row.Volume; Adjusted = row.``Adj Close``}
-let private translate n (rows:StockData.Row seq) = 
+let private translate (n:int Option) (rows:StockData.Row seq) = 
     let ohlc = Seq.map translateRow rows
-    List.rev (Seq.toList (Seq.take n ohlc))
+    let ohlc' = if Option.isSome n then Seq.take n.Value ohlc else ohlc
+    List.rev (Seq.toList ohlc')
 
 let private urlForAll symbol = YAHOO_URL + "?s=" + symbol
 
@@ -107,7 +108,7 @@ let private updateStockData symbol data =
     else 
         data
 
-let getStockData n symbol = 
+let private getStockData' n symbol = 
     let data = loadFromFile symbol
     match data with
     | Some(data) -> 
@@ -119,9 +120,15 @@ let getStockData n symbol =
         saveToFile symbol data.Headers rows
         translate n data.Rows
 
-let getStockDataOffline n symbol =
+let getStockData n  = getStockData' (Some n)
+let getAllStockData = getStockData' None
+
+let private getStockDataOffline' n symbol =
     let data = loadFromFile symbol
     match data with
     | Some(data) -> translate n data.Rows
     | None       -> printfn "Unable to get offline data from disk (%A): try the online version..." (filenameFor symbol)
                     []
+
+let getStockDataOffline n  = getStockDataOffline' (Some n)
+let getAllStockDataOffline = getStockDataOffline' None

@@ -34,10 +34,10 @@ let private getTrendIndices (data:Frame<DateTime,string>) =
     |> Series.map (fun k v -> v.Value)
     |> Series.observations
 
-type ChartControl (rows:OHLC seq, sphs:list<OHLC>, spls:list<OHLC>, trends:list<OHLC * (Trend*Strength)>, data:Frame<DateTime,string>) as self = 
+type ChartControl (data:Frame<DateTime,string>) as self = 
     inherit UserControl()
     
-    let dates = Seq.map (fun r -> r.Date.ToString("dd/MM/yy")) rows
+    let dates = data.RowKeys |> Seq.map (fun d -> d.ToString("dd/MM/yy"))
     let min = float (Seq.min (Series.values data?Low))
     let max = float (Seq.max (Series.values data?High))
     let sphIndices = presentIndices data "SPH"
