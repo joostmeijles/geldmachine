@@ -1,5 +1,6 @@
 ﻿module GeldMachine.Indicator.Swingpoint
 
+open Deedle
 open System
 open GeldMachine.Data
 
@@ -29,3 +30,6 @@ let private getSPs (data:OHLC list) (property:OHLC -> decimal) (compare:decimal 
 
 let getSPLs (data:OHLC list) = getSPs data (fun row -> row.Low)  (fun current best -> current > best)
 let getSPHs (data:OHLC list) = getSPs data (fun row -> row.High) (fun current best -> current < best)
+
+let getSPLs' (data:Frame<string,string>) = data?SPL <- []
+let getSPHs' (data:Frame<string,string>) = data?SPH <- []

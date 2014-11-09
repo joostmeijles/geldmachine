@@ -1,5 +1,6 @@
 ﻿module GeldMachine.Charting
 
+open Deedle
 open FSharp.Charting
 open GeldMachine.Data
 open GeldMachine.Indicator.Swingpoint
@@ -10,25 +11,44 @@ open System.Windows.Forms
 open System.Drawing
 open System.Windows.Forms.DataVisualization.Charting
 
-type ChartControl (rows:OHLC seq, sphs:list<OHLC>, spls:list<OHLC>, trends:list<OHLC * (Trend*Strength)>) as self = 
+let rec private DHLOC' accum (d:list<DateTime>) (h:list<float>) (l:list<float>) (o:list<float>) (c:list<float>) = 
+    match d with
+    | _ :: _ -> DHLOC' ((d.Head,h.Head,l.Head,o.Head,c.Head) :: accum) d.Tail h.Tail l.Tail o.Tail c.Tail
+    | _      -> accum
+    
+let private DHLOC (data:Frame<DateTime,string>) = 
+    let d = data.RowKeys |> Seq.toList
+    let o = Series.values data?Open  |> Seq.toList
+    let h = Series.values data?High  |> Seq.toList
+    let l = Series.values data?Low   |> Seq.toList
+    let c = Series.values data?Close |> Seq.toList
+    DHLOC' [] d h l o c
+
+let private presentIndices (data:Frame<DateTime,string>) columnName = 
+    data.GetColumn<bool>(columnName) |> Series.indexOrdinally |> Series.filter (fun k v -> v) |> Series.keys 
+
+let private getTrendIndices (data:Frame<DateTime,string>) =
+    data.GetColumn<(Trend*Strength) Option>("TrendChange") 
+    |> Series.indexOrdinally 
+    |> Series.filter (fun k v -> Option.isSome v)
+    |> Series.map (fun k v -> v.Value)
+    |> Series.observations
+
+type ChartControl (rows:OHLC seq, sphs:list<OHLC>, spls:list<OHLC>, trends:list<OHLC * (Trend*Strength)>, data:Frame<DateTime,string>) as self = 
     inherit UserControl()
     
-    let toHLOC (data:OHLC) = data.Date, data.High, data.Low, data.Open, data.Close
-    let HLOC  = Seq.map toHLOC rows
     let dates = Seq.map (fun r -> r.Date.ToString("dd/MM/yy")) rows
-    let minRows rows = Seq.min (Seq.map (fun r -> r.Low)  rows)
-    let maxRows rows = Seq.max (Seq.map (fun r -> r.High) rows)
-    let sphIndices = Seq.map (fun b -> Seq.findIndex (fun r -> r.Date = b.Date) rows) sphs
-    let splIndices = Seq.map (fun b -> Seq.findIndex (fun r -> r.Date = b.Date) rows) spls
-    let trendIndices = Seq.map (fun (b,s) -> s,(Seq.findIndex (fun r -> r.Date = b.Date) rows)) trends
+    let min = float (Seq.min (Series.values data?Low))
+    let max = float (Seq.max (Series.values data?High))
+    let sphIndices = presentIndices data "SPH"
+    let splIndices = presentIndices data "SPL"
+    let trendIndices = getTrendIndices data
 
     let priceChart =
-        let min = float (minRows rows)
-        let max = float (maxRows rows)
-        Chart.Candlestick(HLOC).WithYAxis(Min = min, Max = max)
+        Chart.Candlestick(DHLOC data).WithYAxis(Min = min, Max = max)
 
     let volumeChart =
-        let V = Seq.map (fun r -> (*r.Date,*) r.Volume) rows
+        let V = Series.values data?Volume
         Chart.Column(V)
 
     let findControl (controls:Control.ControlCollection) =
@@ -45,10 +65,10 @@ type ChartControl (rows:OHLC seq, sphs:list<OHLC>, spls:list<OHLC>, trends:list<
             let ta = new TextAnnotation()
             ta.Text <- text
             ta.AnchorDataPoint <- dp
-            chart.Annotations.Add(ta) 
+            chart.Annotations.Add(ta)
             
     let addTrendAnnotation (chart:Chart) trendIndices =
-        for (b,s),i in trendIndices do
+        for i,(t,s) in trendIndices do
             let dp = chart.Series.[0].Points.[i]
             let aa = new TextAnnotation() //TODO: Use ArrowAnnotation
             //aa.ArrowStyle <- ArrowStyle.Simple
@@ -56,7 +76,7 @@ type ChartControl (rows:OHLC seq, sphs:list<OHLC>, spls:list<OHLC>, trends:list<
                         | Ambivalent -> Color.Black
                         | Confirmed  -> Color.Green
                         | Suspect    -> Color.Red
-            let text = match b with
+            let text = match t with
                        | Sideways -> "Side"
                        | Bullish  -> "Bull"
                        | Bearish  -> "Bear"

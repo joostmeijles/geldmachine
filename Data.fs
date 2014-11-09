@@ -2,6 +2,7 @@
 
 open HttpClient
 open FSharp.Data
+open Deedle
 open System
 open System.IO
 
@@ -17,6 +18,8 @@ type OHLC = {
     Adjusted : decimal }
     with
         static member (==) (a:OHLC, b:OHLC)= a.Equals b
+
+let toFrame (ohlcs:list<OHLC>) = Frame.ofRecords ohlcs |> Frame.indexRowsDate "Date"
 
 let low  (p:OHLC) = p.Low
 let high (p:OHLC) = p.High

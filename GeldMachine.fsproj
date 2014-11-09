@@ -39,7 +39,7 @@
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="Deedle">
-      <HintPath>packages\Deedle.1.0.2\lib\net40\Deedle.dll</HintPath>
+      <HintPath>packages\Deedle.1.0.6\lib\net40\Deedle.dll</HintPath>
       <Private>True</Private>
     </Reference>
     <Reference Include="FSharp.Charting">
@@ -60,6 +60,7 @@
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
+    <Reference Include="System.Data" />
     <Reference Include="System.Drawing" />
     <Reference Include="System.Numerics" />
     <Reference Include="System.Windows.Forms" />
