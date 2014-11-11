@@ -49,7 +49,7 @@ let analyzeData stock =
 let gspc = analyzeData "^GSPC"
 
 let addToForm (form : Form) data =
-    form.Controls.Add(new ChartControl(data, Dock = DockStyle.Fill))
+    form.Controls.Add(new ChartControl(data))
 
 [<EntryPoint>]
 let main argv = 

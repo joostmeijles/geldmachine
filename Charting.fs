@@ -34,8 +34,27 @@ let private getTrendIndices (data:Frame<DateTime,string>) =
     |> Series.map (fun k v -> v.Value)
     |> Series.observations
 
+let private createSeries name chartType =
+        let s = new Series()
+        s.ChartArea <- name
+        s.ChartType <- chartType
+        s.Name <- name
+        s.IsVisibleInLegend <- false
+        s.XValueType <- System.Windows.Forms.DataVisualization.Charting.ChartValueType.DateTime
+        s
+
+let private createChartArea name x y =
+        let ca = new ChartArea()
+        ca.Name <- name
+        ca.Position.Auto <- false 
+        ca.Position.Height <- float32 42
+        ca.Position.Width <- float32 88
+        ca.Position.X <- float32 x
+        ca.Position.Y <- float32 y
+        ca
+
 type ChartControl (data:Frame<DateTime,string>) as self = 
-    inherit UserControl()
+    inherit UserControl(Dock = DockStyle.Fill)
     
     let dates = data.RowKeys |> Seq.map (fun d -> d.ToString("dd/MM/yy"))
     let min = float (Seq.min (Series.values data?Low))
@@ -44,24 +63,41 @@ type ChartControl (data:Frame<DateTime,string>) as self =
     let splIndices = presentIndices data "SPL"
     let trendIndices = getTrendIndices data
 
-    let priceChart =
-        Chart.Candlestick(DHLOC data).WithYAxis(Min = min, Max = max)
+    let priceSeries = 
+        let s = createSeries "Price" SeriesChartType.Candlestick 
+        s.YValuesPerPoint <- 4
+        s.["PriceUpColor"]   <- "Green"
+        s.["PriceDownColor"] <- "Red"
+        s.["PointWidth"] <- "0.8"
+        s
 
-    let volumeChart =
-        let V = Series.values data?Volume
-        Chart.Column(V)
+    let volSeries = 
+        let s = createSeries "Volume" SeriesChartType.Column
+        s.["PointWidth"] <- "0.5"
+        s
+        
+    let priceChartArea = 
+        let ca = createChartArea "Price" 3 10
+        ca.AxisY.Maximum <- max
+        ca.AxisY.Minimum <- min
+        ca
 
-    let findControl (controls:Control.ControlCollection) =
-        let mutable (found:Chart Option) = None
-        found <- None
-        for c in controls do
-            if c.GetType() = typeof<Chart> then
-                found <- Some(c :?> Chart)
-        found  
+    let volChartArea = createChartArea "Volume" 3 52
+    
+    let chart = 
+        let c = new Chart()
+        c.ChartAreas.Add(priceChartArea)
+        c.ChartAreas.Add(volChartArea)
+        c.Series.Add(priceSeries)
+        c.Series.Add(volSeries)
+        c.Size <- new System.Drawing.Size(446, 296)
+        c.Location <- new System.Drawing.Point(16, 48)
+        c.Dock <- System.Windows.Forms.DockStyle.Fill 
+        c
 
     let addSwingpointAnnotation (chart:Chart) spIndices text =
         for i in spIndices do 
-            let dp = chart.Series.[0].Points.[i]
+            let dp = chart.Series.["Price"].Points.[i]
             let ta = new TextAnnotation()
             ta.Text <- text
             ta.AnchorDataPoint <- dp
@@ -69,7 +105,7 @@ type ChartControl (data:Frame<DateTime,string>) as self =
             
     let addTrendAnnotation (chart:Chart) trendIndices =
         for i,(t,s) in trendIndices do
-            let dp = chart.Series.[0].Points.[i]
+            let dp = chart.Series.["Price"].Points.[i]
             let aa = new TextAnnotation() //TODO: Use ArrowAnnotation
             //aa.ArrowStyle <- ArrowStyle.Simple
             let color = match s with
@@ -86,32 +122,43 @@ type ChartControl (data:Frame<DateTime,string>) as self =
             aa.AnchorDataPoint <- dp
             chart.Annotations.Add(aa)
 
-    let alignCharts (chart:Chart) = 
-        chart.ChartAreas.[0].AlignWithChartArea <- "Area_2"
-        chart.ChartAreas.[1].Position.Height    <- chart.ChartAreas.[1].Position.Height / (float32 2) 
-        chart.ChartAreas.[1].Position.Y         <- chart.ChartAreas.[1].Position.Y - (float32 5)
+    let addPrice (chart:Chart) =
+        let dhloc = DHLOC data
+        let d,h,l,o,c = Seq.head dhloc
+        chart.Series.["Price"].Points.AddXY(d, h) |> ignore
+        chart.Series.["Price"].Points.[0].YValues.[1] <- l
+        chart.Series.["Price"].Points.[0].YValues.[2] <- o 
+        chart.Series.["Price"].Points.[0].YValues.[3] <- c
 
-    let formatDates (chart:Chart) =
-        chart.ChartAreas.[1].AxisX.LabelStyle.Enabled <- false
-        let mutable i = 0
-        for d in dates do
-            chart.Series.[0].Points.[i].AxisLabel <- d
-            chart.Series.[0].Points.[i].ToolTip   <- d + " High=#VALY1, Low=#VALY2, Open=#VALY3, Close=#VALY4"
-            chart.Series.[1].Points.[i].ToolTip   <- d + " Volume=#VALY1"
+        let mutable i = 1
+        for d,h,l,o,c in List.tail (Seq.toList dhloc) do
+            chart.Series.["Price"].Points.AddXY(i, h) |> ignore
+            chart.Series.["Price"].Points.[i].YValues.[1] <- l
+            chart.Series.["Price"].Points.[i].YValues.[2] <- o 
+            chart.Series.["Price"].Points.[i].YValues.[3] <- c
+            let x = chart.Series.["Price"].Points.[i-1].XValue
+            chart.Series.["Price"].Points.[i].XValue <- x + 1.0
+            chart.Series.["Price"].Points.[i].ToolTip <- " High=#VALY1, Low=#VALY2, Open=#VALY3, Close=#VALY4"
+            i <- i + 1
+
+    let addVolume (chart:Chart) = 
+        let V = Series.observations data?Volume
+        let d,vol = Seq.head V
+        chart.Series.["Volume"].Points.AddXY(d, vol) |> ignore
+        let mutable i = 1
+        for d,vol in List.tail (Seq.toList V) do
+            chart.Series.["Volume"].Points.AddXY(i, vol) |> ignore
+            let x = chart.Series.["Volume"].Points.[i-1].XValue
+            chart.Series.["Volume"].Points.[i].XValue <- x + 1.0
+            chart.Series.["Volume"].Points.[i].ToolTip <- " Volume=#VALY1"
             i <- i + 1
 
     do
-        let combine = Chart.Rows [priceChart; volumeChart]
-        let combineChart = new ChartTypes.ChartControl(combine, Dock = DockStyle.Fill)
+        addPrice(chart)
+        addVolume(chart)
+        addSwingpointAnnotation chart sphIndices "SPH"
+        addSwingpointAnnotation chart splIndices "SPL"
+        addTrendAnnotation chart trendIndices
 
-        let c = findControl combineChart.Controls
-        match c with
-        | Some(c) ->
-            alignCharts c    
-            formatDates c
-            addSwingpointAnnotation c sphIndices "SPH"
-            addSwingpointAnnotation c splIndices "SPL"
-            addTrendAnnotation c trendIndices
-        | None -> ignore()
-
-        self.Controls.Add(combineChart)
+        self.Size <- new System.Drawing.Size(728, 360)
+        self.Controls.Add(chart)
