@@ -75,6 +75,15 @@
     <Compile Include="Program.fs" />
     <None Include="App.config" />
     <None Include="packages.config" />
+    <None Include="bearish_black.png" />
+    <None Include="bearish_green.png" />
+    <None Include="bearish_red.png" />
+    <None Include="bullish_black.png" />
+    <None Include="bullish_green.png" />
+    <None Include="bullish_red.png" />
+    <None Include="sideways_black.png" />
+    <None Include="sideways_green.png" />
+    <None Include="sideways_red.png" />
   </ItemGroup>
   <PropertyGroup>
     <MinimumVisualStudioVersion Condition="'$(MinimumVisualStudioVersion)' == ''">11</MinimumVisualStudioVersion>

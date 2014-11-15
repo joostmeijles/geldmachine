@@ -7,6 +7,19 @@ Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "GeldMachine", "GeldMachine.
 EndProject
 Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "Tests", "Tests\Tests.fsproj", "{98691929-9288-4237-BEEF-E4FC7547EEF8}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "images", "images", "{352931E2-1893-4F15-80FA-B6D333400377}"
+	ProjectSection(SolutionItems) = preProject
+		bearish_black.png = bearish_black.png
+		bearish_green.png = bearish_green.png
+		bearish_red.png = bearish_red.png
+		bullish_black.png = bullish_black.png
+		bullish_green.png = bullish_green.png
+		bullish_red.png = bullish_red.png
+		sideways_black.png = sideways_black.png
+		sideways_green.png = sideways_green.png
+		sideways_red.png = sideways_red.png
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU

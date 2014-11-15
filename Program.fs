@@ -55,5 +55,7 @@ let addToForm (form : Form) data =
 let main argv = 
     let form = new Form(Visible = true, Width = 700, Height = 500)
     addToForm form gspc
+    let dates = gspc.RowKeys |> Seq.map (fun d -> d.ToString("dd/MM/yy")) |> Seq.last
+    printfn "%A" dates
     Application.Run(form);
     0 //exit code

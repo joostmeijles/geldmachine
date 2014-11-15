@@ -56,13 +56,13 @@ let private createChartArea name x y =
 type ChartControl (data:Frame<DateTime,string>) as self = 
     inherit UserControl(Dock = DockStyle.Fill)
     
-    let dates = data.RowKeys |> Seq.map (fun d -> d.ToString("dd/MM/yy"))
+    let dates = data.RowKeys |> Seq.map (fun d -> d.ToShortDateString() (* d.ToString("dd/MM/yy")*) )
     let min = float (Seq.min (Series.values data?Low))
     let max = float (Seq.max (Series.values data?High))
     let sphIndices = presentIndices data "SPH"
     let splIndices = presentIndices data "SPL"
     let trendIndices = getTrendIndices data
-
+    
     let priceSeries = 
         let s = createSeries "Price" SeriesChartType.Candlestick 
         s.YValuesPerPoint <- 4
@@ -83,7 +83,7 @@ type ChartControl (data:Frame<DateTime,string>) as self =
         ca
 
     let volChartArea = createChartArea "Volume" 3 52
-    
+
     let chart = 
         let c = new Chart()
         c.ChartAreas.Add(priceChartArea)
@@ -98,29 +98,20 @@ type ChartControl (data:Frame<DateTime,string>) as self =
     let addSwingpointAnnotation (chart:Chart) spIndices text =
         for i in spIndices do 
             let dp = chart.Series.["Price"].Points.[i]
-            let ta = new TextAnnotation()
-            ta.Text <- text
-            ta.AnchorDataPoint <- dp
-            chart.Annotations.Add(ta)
+            dp.Label <- text
             
     let addTrendAnnotation (chart:Chart) trendIndices =
         for i,(t,s) in trendIndices do
-            let dp = chart.Series.["Price"].Points.[i]
-            let aa = new TextAnnotation() //TODO: Use ArrowAnnotation
-            //aa.ArrowStyle <- ArrowStyle.Simple
-            let color = match s with
-                        | Ambivalent -> Color.Black
-                        | Confirmed  -> Color.Green
-                        | Suspect    -> Color.Red
             let text = match t with
-                       | Sideways -> "Side"
-                       | Bullish  -> "Bull"
-                       | Bearish  -> "Bear"
-            aa.Text <- text
-            //aa.ArrowSize <- 100
-            aa.ForeColor <- color
-            aa.AnchorDataPoint <- dp
-            chart.Annotations.Add(aa)
+                       | Sideways -> "sideways"
+                       | Bullish  -> "bullish"
+                       | Bearish  -> "bearish"
+            let color = match s with
+                        | Ambivalent -> "black"
+                        | Confirmed  -> "green"
+                        | Suspect    -> "red"
+            let dp = chart.Series.["Price"].Points.[i]
+            dp.MarkerImage <- text + "_" + color + ".png" 
 
     let addPrice (chart:Chart) =
         let dhloc = DHLOC data
@@ -132,12 +123,12 @@ type ChartControl (data:Frame<DateTime,string>) as self =
 
         let mutable i = 1
         for d,h,l,o,c in List.tail (Seq.toList dhloc) do
-            chart.Series.["Price"].Points.AddXY(i, h) |> ignore
+            chart.Series.["Price"].Points.AddXY(d, h) |> ignore
             chart.Series.["Price"].Points.[i].YValues.[1] <- l
             chart.Series.["Price"].Points.[i].YValues.[2] <- o 
             chart.Series.["Price"].Points.[i].YValues.[3] <- c
             let x = chart.Series.["Price"].Points.[i-1].XValue
-            chart.Series.["Price"].Points.[i].XValue <- x + 1.0
+            //chart.Series.["Price"].Points.[i].XValue <- x + 1.0
             chart.Series.["Price"].Points.[i].ToolTip <- " High=#VALY1, Low=#VALY2, Open=#VALY3, Close=#VALY4"
             i <- i + 1
 
@@ -147,9 +138,9 @@ type ChartControl (data:Frame<DateTime,string>) as self =
         chart.Series.["Volume"].Points.AddXY(d, vol) |> ignore
         let mutable i = 1
         for d,vol in List.tail (Seq.toList V) do
-            chart.Series.["Volume"].Points.AddXY(i, vol) |> ignore
+            chart.Series.["Volume"].Points.AddXY(d, vol) |> ignore
             let x = chart.Series.["Volume"].Points.[i-1].XValue
-            chart.Series.["Volume"].Points.[i].XValue <- x + 1.0
+            //chart.Series.["Volume"].Points.[i].XValue <- x + 1.0
             chart.Series.["Volume"].Points.[i].ToolTip <- " Volume=#VALY1"
             i <- i + 1
 
@@ -162,3 +153,4 @@ type ChartControl (data:Frame<DateTime,string>) as self =
 
         self.Size <- new System.Drawing.Size(728, 360)
         self.Controls.Add(chart)
+        
