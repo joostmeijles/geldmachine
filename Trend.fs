@@ -38,7 +38,7 @@ let rec swingpointTest cmp spOp test p (sps:list<OHLC>) (trend,strength) =
     | h :: t ->
         if cmp p.Close (spOp h) then
             let newTrend    = transition (trend, test)
-            let newStrength = strengthTest p h 
+            let newStrength = strengthTest p h
             swingpointTest cmp spOp test p t (newTrend,newStrength)
         else
             (trend,strength), sps

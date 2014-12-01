@@ -24,13 +24,13 @@ let tryFind' f (lst:list<'a*'b>) =
     | None   -> None
 
 let analyzeData stock =
-    let data   = getAllStockData stock
+    let data   = getStockData 60 stock
     let frame  = toFrame data
     
     let sphs  = getSPHs data
     let sphs' = makeSPColumn sphs data
     frame?SPH <- sphs'
-
+    
     let spls  = getSPLs data
     let spls' = makeSPColumn spls data
     frame?SPL <- spls'
@@ -40,13 +40,14 @@ let analyzeData stock =
     frame?TrendChange <- trends'
 
     let frame60 = Frame.takeLast 60 frame
-    printf "%A" frame60?SPH
+    printf "SPHs: %A" frame60?SPH
 
     frame60
 
 //let aapl = analyzeData "AAPL"
 //let msft = analyzeData "MSFT"
 let gspc = analyzeData "^GSPC"
+//let fb = analyzeData "FB"
 
 let addToForm (form : Form) data =
     form.Controls.Add(new ChartControl(data))

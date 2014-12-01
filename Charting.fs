@@ -53,9 +53,26 @@ let private createChartArea name x y =
         ca.Position.Y <- float32 y
         ca
 
+let private drawCrossHair (g:Graphics) (center:Point) width height (offset:Point) = 
+        let pen = new System.Drawing.Pen(System.Drawing.Color.LightGray, float32 2.0)
+        
+        let fromVertical = new Point(center.X, offset.Y)
+        let toVertical   = new Point(center.X, offset.Y + height)
+        g.DrawLine(pen, fromVertical, toVertical)
+
+        let fromHorizontal = new Point(offset.X,         center.Y)
+        let toHorizontal   = new Point(offset.X + width, center.Y)
+        g.DrawLine(pen, fromHorizontal, toHorizontal)
+
+
 type ChartControl (data:Frame<DateTime,string>) as self = 
     inherit UserControl(Dock = DockStyle.Fill)
-    
+
+    let mutable mousePosition = Point(0,0)
+
+    let width  = 500
+    let height = 300
+
     let dates = data.RowKeys |> Seq.map (fun d -> d.ToShortDateString() (* d.ToString("dd/MM/yy")*) )
     let min = float (Seq.min (Series.values data?Low))
     let max = float (Seq.max (Series.values data?High))
@@ -82,7 +99,10 @@ type ChartControl (data:Frame<DateTime,string>) as self =
         ca.AxisY.Minimum <- min
         ca
 
-    let volChartArea = createChartArea "Volume" 3 52
+    let volChartArea = 
+        let ca = createChartArea "Volume" 3 52
+        ca.AxisY.LabelStyle.Format <- "#,,.M;(#,,.M);0"
+        ca
 
     let chart = 
         let c = new Chart()
@@ -90,9 +110,7 @@ type ChartControl (data:Frame<DateTime,string>) as self =
         c.ChartAreas.Add(volChartArea)
         c.Series.Add(priceSeries)
         c.Series.Add(volSeries)
-        c.Size <- new System.Drawing.Size(446, 296)
-        c.Location <- new System.Drawing.Point(16, 48)
-        c.Dock <- System.Windows.Forms.DockStyle.Fill 
+        c.Dock <- DockStyle.Fill 
         c
 
     let addSwingpointAnnotation (chart:Chart) spIndices text =
@@ -128,8 +146,7 @@ type ChartControl (data:Frame<DateTime,string>) as self =
             chart.Series.["Price"].Points.[i].YValues.[2] <- o 
             chart.Series.["Price"].Points.[i].YValues.[3] <- c
             let x = chart.Series.["Price"].Points.[i-1].XValue
-            //chart.Series.["Price"].Points.[i].XValue <- x + 1.0
-            chart.Series.["Price"].Points.[i].ToolTip <- " High=#VALY1, Low=#VALY2, Open=#VALY3, Close=#VALY4"
+            //chart.Series.["Price"].Points.[i].ToolTip <- "#VALX{dd/MM/yyyy} High=#VALY1, Low=#VALY2, Open=#VALY3, Close=#VALY4"
             i <- i + 1
 
     let addVolume (chart:Chart) = 
@@ -140,9 +157,56 @@ type ChartControl (data:Frame<DateTime,string>) as self =
         for d,vol in List.tail (Seq.toList V) do
             chart.Series.["Volume"].Points.AddXY(d, vol) |> ignore
             let x = chart.Series.["Volume"].Points.[i-1].XValue
-            //chart.Series.["Volume"].Points.[i].XValue <- x + 1.0
-            chart.Series.["Volume"].Points.[i].ToolTip <- " Volume=#VALY1"
+            //chart.Series.["Volume"].Points.[i].ToolTip <- " Volume=#VALY1"
             i <- i + 1
+
+    let label = 
+        let l = new Label()
+        l.Name <- "Label"
+        l.Size <- Size(width,25)
+        l.Dock <- DockStyle.Top
+        l.TextAlign <- ContentAlignment.MiddleLeft
+        l.BackColor <- Color.White
+        l
+
+    let panel =
+        let p = new Panel() 
+        p.Name <- "Panel"
+        p.Dock <- DockStyle.Fill
+        p.BackColor <- Color.White
+        p
+
+    let findNearestPoint x (chartArea:ChartArea) (series:Series) = 
+        let v = chartArea.AxisX.PixelPositionToValue(x)
+        let dps = Seq.map (fun (d:DataPoint) ->  d,Math.Abs(d.XValue - v)) series.Points
+        let (nearest,mv) = Seq.minBy (fun (d,dist) -> dist) dps
+        nearest
+
+    let mouseMove (c:Chart) (l:Label) (e:MouseEventArgs) = 
+        mousePosition <- e.Location
+        let nearestPrice = findNearestPoint (float e.X) chart.ChartAreas.["Price"] chart.Series.["Price"]
+        let nearestVol   = findNearestPoint (float e.X) chart.ChartAreas.["Volume"] chart.Series.["Volume"]
+        let date = (nearestPrice.XValue |> DateTime.FromOADate).ToShortDateString()
+        let vol = nearestVol.YValues.[0]
+        let h = nearestPrice.YValues.[0]
+        let low = nearestPrice.YValues.[1]
+        let o = nearestPrice.YValues.[2]
+        let close = nearestPrice.YValues.[3]
+        let s = sprintf "%s High=%.2f, Low=%.2f, Open=%.2f, Close=%.2f, Vol=%.0f %A" date h low o close vol e.Location
+        l.Text <- s
+        c.Invalidate()
+
+    let onPaint (c:Chart) (e:PaintEventArgs) =
+        drawCrossHair e.Graphics mousePosition c.Width c.Height c.Location
+
+    let mouseEnter (e:EventArgs) =
+        System.Windows.Forms.Cursor.Hide()
+
+    let mouseLeave (e:EventArgs) =
+        System.Windows.Forms.Cursor.Show()
+
+    let onResize (l:Label) (e:EventArgs) =
+        l.Size <- Size(self.Size.Width, l.Size.Height)
 
     do
         addPrice(chart)
@@ -151,6 +215,15 @@ type ChartControl (data:Frame<DateTime,string>) as self =
         addSwingpointAnnotation chart splIndices "SPL"
         addTrendAnnotation chart trendIndices
 
-        self.Size <- new System.Drawing.Size(728, 360)
-        self.Controls.Add(chart)
+        self.Size <- Size(width, height)
         
+        panel.Controls.Add(chart)
+        panel.Controls.Add(label)
+        self.Controls.Add(panel)
+
+        chart.MouseMove.Add(mouseMove chart label)
+        chart.MouseEnter.Add(mouseEnter)
+        chart.MouseLeave.Add(mouseLeave)
+        chart.Paint.Add(onPaint chart)
+
+        self.Resize.Add(onResize label)
