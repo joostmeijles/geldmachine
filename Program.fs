@@ -23,8 +23,8 @@ let tryFind' f (lst:list<'a*'b>) =
     | Some e -> Some (snd e)
     | None   -> None
 
-let analyzeData stock =
-    let data   = getStockData 60 stock
+let analyzeData symbolName =
+    let data   = getStockData 60 symbolName
     let frame  = toFrame data
     
     let sphs  = getSPHs data
@@ -42,21 +42,21 @@ let analyzeData stock =
     let frame60 = Frame.takeLast 60 frame
     printf "SPHs: %A" frame60?SPH
 
-    frame60
+    symbolName, frame60
 
 //let aapl = analyzeData "AAPL"
 //let msft = analyzeData "MSFT"
 let gspc = analyzeData "^GSPC"
 //let fb = analyzeData "FB"
 
-let addToForm (form : Form) data =
-    form.Controls.Add(new ChartControl(data))
+let addToForm (form : Form) (symbolName, data) =
+    form.Controls.Add(new ChartControl(symbolName, data))
 
 [<EntryPoint>]
 let main argv = 
     let form = new Form(Visible = true, Width = 700, Height = 500)
     addToForm form gspc
-    let dates = gspc.RowKeys |> Seq.map (fun d -> d.ToString("dd/MM/yy")) |> Seq.last
-    printfn "%A" dates
+    //let dates = gspc.RowKeys |> Seq.map (fun d -> d.ToString("dd/MM/yy")) |> Seq.last
+    //printfn "%A" dates
     Application.Run(form);
     0 //exit code

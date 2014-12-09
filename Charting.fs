@@ -65,7 +65,7 @@ let private drawCrossHair (g:Graphics) (center:Point) width height (offset:Point
         g.DrawLine(pen, fromHorizontal, toHorizontal)
 
 
-type ChartControl (data:Frame<DateTime,string>) as self = 
+type ChartControl (symbolName:string, data:Frame<DateTime,string>) as self = 
     inherit UserControl(Dock = DockStyle.Fill)
 
     let mutable mousePosition = Point(0,0)
@@ -163,6 +163,7 @@ type ChartControl (data:Frame<DateTime,string>) as self =
     let label = 
         let l = new Label()
         l.Name <- "Label"
+        l.Text <- symbolName
         l.Size <- Size(width,25)
         l.Dock <- DockStyle.Top
         l.TextAlign <- ContentAlignment.MiddleLeft
@@ -179,21 +180,43 @@ type ChartControl (data:Frame<DateTime,string>) as self =
     let findNearestPoint x (chartArea:ChartArea) (series:Series) = 
         let v = chartArea.AxisX.PixelPositionToValue(x)
         let dps = Seq.map (fun (d:DataPoint) ->  d,Math.Abs(d.XValue - v)) series.Points
-        let (nearest,mv) = Seq.minBy (fun (d,dist) -> dist) dps
+        let (nearest,_) = Seq.minBy (fun (d,dist) -> dist) dps
+        nearest
+
+    let findNearestIndex x (chartArea:ChartArea) (series:Series) =
+        let v = chartArea.AxisX.PixelPositionToValue(x)
+        let indices = {0..(Seq.length series.Points)}
+        let dists = Seq.map (fun (i,(d:DataPoint)) ->  i,Math.Abs(d.XValue - v)) (Seq.zip indices series.Points)
+        let (nearest,_) = Seq.minBy (fun (i,dist) -> dist) dists
         nearest
 
     let mouseMove (c:Chart) (l:Label) (e:MouseEventArgs) = 
         mousePosition <- e.Location
         let nearestPrice = findNearestPoint (float e.X) chart.ChartAreas.["Price"] chart.Series.["Price"]
         let nearestVol   = findNearestPoint (float e.X) chart.ChartAreas.["Volume"] chart.Series.["Volume"]
-        let date = (nearestPrice.XValue |> DateTime.FromOADate).ToShortDateString()
-        let vol = nearestVol.YValues.[0]
-        let h = nearestPrice.YValues.[0]
-        let low = nearestPrice.YValues.[1]
-        let o = nearestPrice.YValues.[2]
-        let close = nearestPrice.YValues.[3]
-        let s = sprintf "%s High=%.2f, Low=%.2f, Open=%.2f, Close=%.2f, Vol=%.0f %A" date h low o close vol e.Location
-        l.Text <- s
+        let nearestDate  = nearestPrice.XValue |> DateTime.FromOADate
+        let date = nearestDate.ToShortDateString()
+        let sp = data.Rows.[nearestDate]
+        
+        let isSPH = data.GetColumn<bool>("SPH").[nearestDate]
+        let isSPL = data.GetColumn<bool>("SPL").[nearestDate]
+        let spStr =
+            match (isSPH, isSPL) with
+            | true, true  -> "[SPH, SPL]"
+            | true, false -> "[SPH]"
+            | false, true -> "[SPL]"
+            | _, _ -> "" 
+        
+        let trendChange = data.GetColumn<(Trend*Strength) Option>("TrendChange").TryGet(nearestDate)
+        let trendStr =
+            if trendChange.HasValue && trendChange.Value.IsSome then
+                let t,s = trendChange.Value.Value
+                showStrengthTrend s t
+            else ""
+
+        let str = sprintf "%s %s High=%.2f, Low=%.2f, Open=%.2f, Close=%.2f, Vol=%.0f %s %s" 
+                          symbolName date sp?High sp?Low sp?Open sp?High sp?Volume spStr trendStr
+        l.Text <- str
         c.Invalidate()
 
     let onPaint (c:Chart) (e:PaintEventArgs) =

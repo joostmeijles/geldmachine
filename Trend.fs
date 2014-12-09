@@ -24,6 +24,20 @@ let private transition = function
     | Bullish,  SWPTestLow  -> Sideways
     | Bullish,  SWPTestHigh -> Bullish 
 
+let showTrend t =
+    match t with
+    | Bearish  -> "Bearish"
+    | Bullish  -> "Bullish"
+    | Sideways -> "Sideways"
+
+let showStrength s =
+    match s with
+    | Ambivalent -> "Ambivalent"
+    | Suspect    -> "Suspect"
+    | Confirmed  -> "Confirmed"
+
+let showStrengthTrend s t = (showStrength s) + " " + (showTrend t)
+
 let strengthTest (p:OHLC) (swp:OHLC) = 
     if p.Volume > swp.Volume then
         Confirmed
