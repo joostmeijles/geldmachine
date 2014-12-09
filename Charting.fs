@@ -211,7 +211,7 @@ type ChartControl (symbolName:string, data:Frame<DateTime,string>) as self =
         let trendStr =
             if trendChange.HasValue && trendChange.Value.IsSome then
                 let t,s = trendChange.Value.Value
-                showStrengthTrend s t
+                sprintf "%A %A" s t
             else ""
 
         let str = sprintf "%s %s High=%.2f, Low=%.2f, Open=%.2f, Close=%.2f, Vol=%.0f %s %s" 
