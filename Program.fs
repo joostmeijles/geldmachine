@@ -7,6 +7,7 @@ open Deedle
 
 open GeldMachine.Charting
 open GeldMachine.Data
+open GeldMachine.Indicator.AnchorBar
 open GeldMachine.Indicator.Swingpoint
 open GeldMachine.Indicator.Trend
 
@@ -40,7 +41,8 @@ let analyzeData symbolName =
     frame?TrendChange <- trends'
 
     let frame60 = Frame.takeLast 60 frame
-    printf "SPHs: %A" frame60?SPH
+
+    anchorBars frame60
 
     symbolName, frame60
 
